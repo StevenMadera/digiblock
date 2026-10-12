@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block contenido %}
+<section class="page-heading"><div><p class="eyebrow">UNIVERSIDAD / EMISIÓN</p><h1>Emitir certificado</h1><p class="heading-copy">Datos académicos ficticios para la demostración.</p></div></section>
+{% if error %}<div class="notice notice--error" role="alert">{{ error }}</div>{% endif %}
+{% if certificado %}
+<section class="issued-banner" role="status"><span class="issued-mark" aria-hidden="true">✓</span><div><p class="eyebrow">OPERACIÓN COMPLETADA</p><h2>EMITIDO</h2><p>El certificado quedó firmado y disponible para verificación.</p></div></section>
+<section class="issued-layout"><article class="certificate-sheet"><div class="certificate-topline"><span>DIGIBLOCK / CREDENCIAL DIGITAL</span><span>{{ certificado.version_esquema }}</span></div><p class="certificate-overline">SE CERTIFICA QUE</p><h2>{{ certificado.estudiante_nombre }}</h2><p class="certificate-program">ha completado los requisitos académicos de</p><h3>{{ certificado.titulo }}</h3><p>{{ certificado.programa }}</p><div class="certificate-meta"><span>{{ certificado.universidad }}</span><time>{{ certificado.fecha_expedicion }}</time></div><div class="certificate-id">{{ certificado.id }}</div></article>
+	<aside class="issued-details"><div class="qr-frame"><img src="data:image/png;base64,{{ qr_base64 }}" alt="Código QR de verificación del certificado {{ certificado.id }}"></div><p class="qr-caption">Escanea para verificar</p><dl class="data-list"><div><dt>Identificador</dt><dd>{{ certificado.id }}</dd></div><div><dt>Huella SHA-256</dt><dd><code class="hash-block">{{ certificado.huella_sha256 }}</code></dd></div><div><dt>Algoritmo</dt><dd>{{ certificado.algoritmo }}</dd></div><div><dt>URL de verificación</dt><dd><a href="{{ certificado.url_verificacion }}">{{ certificado.url_verificacion }}</a></dd></div></dl><a class="button button--primary button--wide" href="/api/certificados/{{ certificado.id }}/descarga">Descargar diploma digital (JSON) <span aria-hidden="true">↓</span></a><a class="text-link" href="/certificado/{{ certificado.id }}">Abrir vista del estudiante <span aria-hidden="true">→</span></a></aside>
+</section>
+{% else %}
+<section class="form-section"><form action="/emitir" method="post" class="form-grid">
+	<div class="field field--full"><label for="estudiante_nombre">Nombre del estudiante</label><input id="estudiante_nombre" name="estudiante_nombre" value="{{ datos.estudiante_nombre if datos else '' }}" maxlength="120" autocomplete="off" required></div>
+	<div class="field"><label for="estudiante_documento">Documento ficticio</label><input id="estudiante_documento" name="estudiante_documento" value="{{ datos.estudiante_documento if datos else '' }}" maxlength="40" autocomplete="off" required></div>
+	<div class="field"><label for="fecha_expedicion">Fecha de expedición</label><input id="fecha_expedicion" name="fecha_expedicion" type="date" value="{{ datos.fecha_expedicion if datos else fecha_hoy }}" max="{{ fecha_hoy }}" required></div>
+	<div class="field"><label for="programa">Programa</label><input id="programa" name="programa" value="{{ datos.programa if datos else '' }}" maxlength="160" required></div>
+	<div class="field"><label for="titulo">Título otorgado</label><input id="titulo" name="titulo" value="{{ datos.titulo if datos else '' }}" maxlength="160" required></div>
+	<div class="form-actions field--full"><span>Firma: ML-DSA-65 · SHA-256</span><button class="button button--primary" type="submit" data-loading-text="Firmando…">Emitir certificado <span aria-hidden="true">→</span></button></div>
+</form></section>
+{% endif %}
+{% endblock %}

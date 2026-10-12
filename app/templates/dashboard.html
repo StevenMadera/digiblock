@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block contenido %}
+<section class="page-heading"><div><p class="eyebrow">OPERACIÓN / HOY</p><h1>Resumen del registro</h1><p class="heading-copy">{{ university_name|default("Universidad Demo DigiBlock") }}</p></div><a class="button button--primary" href="/verificar">Verificar un título <span aria-hidden="true">→</span></a></section>
+<section class="metric-grid" aria-label="Indicadores del registro">
+	<article class="metric metric--teal"><span class="metric-label">Certificados emitidos</span><strong class="metric-value">{{ estadisticas.certificados }}</strong><span class="metric-foot">Registro acumulado</span></article>
+	<article class="metric metric--blue"><span class="metric-label">Verificaciones</span><strong class="metric-value">{{ estadisticas.verificaciones }}</strong><span class="metric-foot">Consultas registradas</span></article>
+	<article class="metric metric--amber"><span class="metric-label">Certificados revocados</span><strong class="metric-value">{{ estadisticas.revocados }}</strong><span class="metric-foot">No vigentes</span></article>
+	<article class="metric metric--chain"><span class="metric-label">Cadena de trazabilidad</span><strong class="metric-value metric-value--state">{% if cadena.valida %}<span class="state-check" aria-hidden="true">✓</span> Válida{% else %}<span class="state-cross" aria-hidden="true">!</span> Revisar{% endif %}</strong><span class="metric-foot">{{ cadena.total }} eventos · simulación</span></article>
+</section>
+<section class="dashboard-grid">
+	<div class="content-section"><div class="section-heading"><div><p class="eyebrow">ACTIVIDAD</p><h2>Emisiones y verificaciones</h2></div><span class="section-note">Totales registrados</span></div>
+		<div class="activity-chart" role="img" aria-label="Emisiones: {{ estadisticas.certificados }}. Verificaciones: {{ estadisticas.verificaciones }}.">
+			<div class="chart-line"><span class="chart-label">Emisiones</span><div class="chart-track"><span class="chart-fill chart-fill--teal" style="width: {{ porcentaje_emisiones }}%"></span></div><strong>{{ estadisticas.certificados }}</strong></div>
+			<div class="chart-line"><span class="chart-label">Verificaciones</span><div class="chart-track"><span class="chart-fill chart-fill--coral" style="width: {{ porcentaje_verificaciones }}%"></span></div><strong>{{ estadisticas.verificaciones }}</strong></div>
+			<div class="chart-legend"><span><i class="legend-dot legend-dot--teal"></i>Emisión</span><span><i class="legend-dot legend-dot--coral"></i>Verificación</span></div>
+		</div>
+	</div>
+	<div class="content-section"><div class="section-heading"><div><p class="eyebrow">INTEGRIDAD</p><h2>Registro de trazabilidad</h2></div></div>
+		<div class="chain-callout {% if not cadena.valida %}chain-callout--broken{% endif %}"><span class="chain-symbol" aria-hidden="true">{% if cadena.valida %}✓{% else %}!{% endif %}</span><div><strong>{% if cadena.valida %}Cadena válida{% else %}Cadena con inconsistencias{% endif %}</strong><p>Simulación de blockchain · {{ cadena.total }} eventos</p></div></div>
+		<a class="text-link" href="/trazabilidad?comprobar=1">Abrir verificación de integridad <span aria-hidden="true">→</span></a>
+	</div>
+</section>
+<section class="content-section recent-section"><div class="section-heading"><div><p class="eyebrow">TRAZABILIDAD</p><h2>Eventos recientes</h2></div><a class="text-link" href="/trazabilidad">Ver registro completo <span aria-hidden="true">→</span></a></div>
+	{% if eventos %}<div class="table-wrap"><table><thead><tr><th>Evento</th><th>Certificado</th><th>Marca de tiempo (UTC)</th><th>Hash</th></tr></thead><tbody>{% for evento in eventos %}<tr><td><span class="event-type">{{ evento.tipo }}</span><span class="event-detail">{{ evento.detalle }}</span></td><td><a class="mono-link" href="/certificado/{{ evento.certificado_id }}">{{ evento.certificado_id }}</a></td><td><time datetime="{{ evento.marca_tiempo }}">{{ evento.marca_tiempo }}</time></td><td><code>{{ evento.hash_evento[:14] }}…</code></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="empty-state">Aún no hay eventos en el registro.</p>{% endif %}
+</section>
+{% endblock %}

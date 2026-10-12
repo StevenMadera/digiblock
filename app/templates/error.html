@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block contenido %}
+<section class="error-page"><p class="eyebrow">DIGIBLOCK / {{ codigo }}</p><h1>{% if codigo == 404 %}No encontramos esa página{% else %}No se pudo completar la solicitud{% endif %}</h1><p>{{ mensaje }}</p><a class="button button--primary" href="/">Volver al resumen <span aria-hidden="true">→</span></a></section>
+{% endblock %}

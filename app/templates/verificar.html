@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block contenido %}
+<section class="page-heading"><div><p class="eyebrow">CONSULTA PÚBLICA</p><h1>Verificar certificado</h1><p class="heading-copy">Busca por código o presenta el archivo digital.</p></div></section>
+<section class="verify-panel"><form action="/verificar" method="post" enctype="multipart/form-data" class="verify-form">
+	<div class="verify-code-field"><label for="codigo">Código del certificado</label><div class="input-action-row"><input id="codigo" name="codigo" type="text" value="{{ codigo|default('') }}" placeholder="DGB-2026-XXXXXX" autocomplete="off"><button class="button button--quiet" type="button" data-paste-link aria-label="Pegar enlace de verificación">Pegar enlace</button></div></div>
+	<div class="verify-divider"><span>o presenta el diploma digital</span></div>
+	<div class="file-field"><label for="archivo">Archivo JSON del certificado</label><input id="archivo" name="archivo" type="file" accept=".json,application/json"><span id="file-name" class="file-name">Ningún archivo seleccionado</span></div>
+	<button class="button button--primary" type="submit" data-loading-text="Verificando…">Verificar <span aria-hidden="true">→</span></button>
+</form></section>
+{% if error %}<div class="notice notice--error" role="alert">{{ error }}</div>{% endif %}
+{% if resultado %}<section class="verification-result" aria-live="polite">
+	<div class="result-heading {{ estado_clase }}"><span class="result-symbol" aria-hidden="true">{{ estado_simbolo }}</span><div><p class="eyebrow">RESULTADO / {{ resultado.estado }}</p><h2>{{ resultado.mensaje_humano }}</h2><p>Comprobación realizada en {{ resultado.tiempo_ms }} ms{% if codigo %} · {{ codigo }}{% endif %}</p></div></div>
+	<div class="checks-grid">
+		<div class="check-row"><span class="check-indicator {% if resultado.detalles.huella_coincide %}check-indicator--yes{% else %}check-indicator--no{% endif %}" aria-hidden="true">{% if resultado.detalles.huella_coincide %}✓{% else %}!{% endif %}</span><div><strong>Huella SHA-256</strong><p>{% if resultado.detalles.huella_coincide %}Coincide con el registro{% else %}No coincide con el registro{% endif %}</p></div></div>
+		<div class="check-row"><span class="check-indicator {% if resultado.detalles.firma_valida %}check-indicator--yes{% else %}check-indicator--no{% endif %}" aria-hidden="true">{% if resultado.detalles.firma_valida %}✓{% else %}!{% endif %}</span><div><strong>Firma {{ resultado.algoritmo|default('digital') }}</strong><p>{% if resultado.detalles.firma_valida %}Firma verificada con la clave pública{% else %}La firma no pudo verificarse{% endif %}</p></div></div>
+		<div class="check-row"><span class="check-indicator {% if resultado.detalles.estado_vigente %}check-indicator--yes{% else %}check-indicator--no{% endif %}" aria-hidden="true">{% if resultado.detalles.estado_vigente %}✓{% else %}!{% endif %}</span><div><strong>Vigencia</strong><p>{% if resultado.detalles.estado_vigente %}Certificado vigente{% elif resultado.estado == 'REVOCADO' %}Certificado revocado{% else %}No se confirmó vigencia{% endif %}</p></div></div>
+	</div>
+	{% if resultado.huella_calculada or resultado.huella_registrada %}<details class="hash-comparison"><summary>Ver huellas SHA-256</summary><dl><div><dt>Calculada</dt><dd><code>{{ resultado.huella_calculada }}</code></dd></div><div><dt>Registrada</dt><dd><code>{{ resultado.huella_registrada }}</code></dd></div></dl></details>{% endif %}
+	{% if cambios %}<div class="diff-section"><div class="notice notice--caution">{{ aviso_analisis }}</div><h3>Cambios detectados</h3><div class="table-wrap"><table><thead><tr><th>Campo</th><th>Registrado</th><th>Presentado</th></tr></thead><tbody>{% for cambio in cambios %}<tr><th scope="row">{{ cambio.campo }}</th><td>{{ cambio.valor_original }}</td><td>{{ cambio.valor_presentado }}</td></tr>{% endfor %}</tbody></table></div></div>{% endif %}
+</section>{% endif %}
+{% endblock %}

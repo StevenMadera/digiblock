@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block contenido %}
+<section class="login-layout"><div class="login-aside"><p class="eyebrow">ACCESO INSTITUCIONAL</p><h1>Universidad<br>Demo DigiBlock</h1><p>Acceso al espacio de emisión y laboratorio del prototipo.</p><span class="login-index">01 <i></i> 04</span></div>
+	<div class="login-form-panel"><div class="form-heading"><p class="eyebrow">IDENTIFICACIÓN</p><h2>Iniciar sesión</h2></div>{% if error %}<div class="notice notice--error" role="alert">{{ error }}</div>{% endif %}
+		<form action="/login" method="post" class="form-stack"><input type="hidden" name="next" value="{{ next|default('/') }}"><label for="usuario">Usuario</label><input id="usuario" name="usuario" type="text" autocomplete="username" maxlength="80" required><label for="contrasena">Contraseña</label><input id="contrasena" name="contrasena" type="password" autocomplete="current-password" maxlength="256" required><button class="button button--primary button--wide" type="submit" data-loading-text="Validando…">Entrar <span aria-hidden="true">→</span></button></form>
+		<p class="form-footnote">La sesión de administración usa una cookie firmada.</p>
+	</div>
+</section>
+{% endblock %}

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#173441">
+	<title>{{ titulo }} · DigiBlock</title>
+	<link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+	<div class="app-layout">
+		<aside class="sidebar" aria-label="Navegación principal">
+			<a class="brand" href="/" aria-label="DigiBlock, inicio"><span class="brand-mark" aria-hidden="true">D</span><span class="brand-name">DigiBlock</span></a>
+			<p class="brand-caption">Credenciales académicas<br>verificables</p>
+			<nav class="primary-nav">
+				<a href="/" {% if request.url.path == '/' %}aria-current="page"{% endif %}><span class="nav-glyph" aria-hidden="true">⌂</span><span>Resumen</span></a>
+				<a href="/emitir" {% if request.url.path.startswith('/emitir') %}aria-current="page"{% endif %}><span class="nav-glyph" aria-hidden="true">＋</span><span>Emitir</span></a>
+				<a href="/verificar" {% if request.url.path.startswith('/verificar') %}aria-current="page"{% endif %}><span class="nav-glyph" aria-hidden="true">⌕</span><span>Verificar</span></a>
+				<a href="/trazabilidad" {% if request.url.path.startswith('/trazabilidad') %}aria-current="page"{% endif %}><span class="nav-glyph" aria-hidden="true">≋</span><span>Trazabilidad</span></a>
+				<a href="/laboratorio" {% if request.url.path.startswith('/laboratorio') %}aria-current="page"{% endif %}><span class="nav-glyph" aria-hidden="true">⌁</span><span>Laboratorio</span></a>
+			</nav>
+			<div class="sidebar-bottom">
+				<span class="prototype-badge">Prototipo académico</span>
+				<div class="session-line"><span class="session-dot {% if request.session.get('usuario') %}session-dot--active{% endif %}" aria-hidden="true"></span><span>{{ "Universidad" if request.session.get("usuario") else "Invitado" }}</span></div>
+				{% if request.session.get('usuario') %}<form action="/logout" method="post"><button class="sidebar-logout" type="submit">Cerrar sesión</button></form>{% else %}<a class="sidebar-login" href="/login">Acceso universidad</a>{% endif %}
+			</div>
+		</aside>
+		<div class="workspace">
+			<header class="topbar"><div class="topbar-context"><span class="topbar-kicker">DigiBlock / {{ seccion }}</span><span class="topbar-university">{{ university_name|default("Universidad Demo DigiBlock") }}</span></div><div class="topbar-status"><span class="status-led" aria-hidden="true"></span><span>{{ "Sesión universitaria" if request.session.get("usuario") else "Consulta pública" }}</span></div></header>
+			<main id="contenido" class="page-content">{% block contenido %}{% endblock %}</main>
+			<footer class="page-footer"><span>DigiBlock · Prototipo académico</span><a href="/acerca">Alcance y limitaciones</a></footer>
+		</div>
+	</div>
+	<script src="/static/js/app.js" defer></script>
+</body>
+</html>
