@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Iterator
 
 import app.database as database
+import app.main as main
 import app.routers.api as api
 import app.services.auth as auth
 import app.services.certificates as certificates
@@ -73,6 +74,7 @@ def cliente_api(
 	monkeypatch.setattr(certificates, "KeyStore", lambda: almacen_claves)
 	monkeypatch.setattr(verification, "KeyStore", lambda: almacen_claves)
 	monkeypatch.setattr(api, "KeyStore", lambda: almacen_claves)
+	monkeypatch.setattr(main, "inicializar_entorno", lambda **_: {})
 	auth.limpiar_intentos()
 	with TestClient(aplicacion) as cliente:
 		yield cliente

@@ -72,6 +72,10 @@ python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 Permite el puerto 8000 únicamente en el perfil de red privada si Windows Firewall lo solicita. Mantén el PC y el celular en la misma red; no expongas este prototipo a Internet.
 
+## Despliegue en Render
+
+El Blueprint está en `render.yaml`. Al crear el servicio, define `ADMIN_PASSWORD`, `SECRET_KEY` y `BASE_URL` en el panel de Render; el servicio usa `APP_ENV=produccion`. `BASE_URL` debe ser la URL HTTPS pública asignada al servicio, sin una barra final. Render Free usa almacenamiento efímero para el sistema de archivos: un reinicio o redeploy puede borrar `data/` y `keys/`. El arranque volverá a sembrar la demo y generará claves nuevas, pero certificados anteriores dejarán de verificar. Este plan sirve para demostración, no para conservar registros; persistencia real requiere almacenamiento durable y gestión de claves externa.
+
 ## Acceso y flujos
 
 Las credenciales se leen de `.env`. El archivo de ejemplo usa `ADMIN_USER=universidad` y `ADMIN_PASSWORD=cambiar-antes-de-usar`; son valores de desarrollo y deben sustituirse antes de una demostración compartida.

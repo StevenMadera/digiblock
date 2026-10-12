@@ -5,16 +5,18 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.staticfiles import StaticFiles
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.config import BASE_DIR, SECRET_KEY
-from app.database import init_db
+from app import config
+import app.database as database
+from app.crypto.keystore import KeyStore
 from app.routers.api import router as api_router
 from app.routers.web import plantillas, router as web_router
+from scripts.seed_demo import sembrar_demo
 
 LIMITE_CUERPO_API_BYTES = 1_000_000
 
@@ -74,35 +76,47 @@ class LimiteCuerpoApi:
 
 @asynccontextmanager
 async def ciclo_vida(_: FastAPI):
-    """Inicializa el esquema al arrancar el servidor."""
-    init_db()
+    """Prepara datos, claves y registros demo al arrancar el servidor."""
+    config.validar_configuracion()
+    inicializar_entorno()
     yield
 
 
-app = FastAPI(
-    title="DigiBlock",
-    description="Prototipo académico de certificados verificables",
-    lifespan=ciclo_vida,
-)
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=SECRET_KEY,
-    session_cookie="digiblock_sesion",
-    max_age=3600,
-    same_site="lax",
-    https_only=False,
-)
-app.add_middleware(LimiteCuerpoApi)
-app.mount(
-    "/static",
-    StaticFiles(directory=str(Path(BASE_DIR) / "app" / "static")),
-    name="static",
-)
-app.include_router(api_router)
-app.include_router(web_router)
+def inicializar_entorno(
+    directorio_datos: str | Path | None = None,
+    directorio_claves: str | Path | None = None,
+) -> dict[str, int]:
+    """Crea el entorno, carga la clave y siembra demo solo con la base vacía."""
+    config.validar_configuracion()
+    ruta_bd_original = database.DATABASE_PATH
+    ruta_bd = (
+        Path(directorio_datos) / "digiblock.sqlite3"
+        if directorio_datos is not None
+        else ruta_bd_original
+    )
+    ruta_claves = (
+        Path(directorio_claves)
+        if directorio_claves is not None
+        else config.BASE_DIR / "keys"
+    )
+    if directorio_datos is not None:
+        database.DATABASE_PATH = ruta_bd
+
+    try:
+        ruta_bd.parent.mkdir(parents=True, exist_ok=True)
+        ruta_claves.mkdir(parents=True, exist_ok=True)
+        database.init_db(ruta_bd)
+        almacen = KeyStore(ruta_claves)
+        with database.conectar(ruta_bd) as conexion:
+            cantidad = conexion.execute("SELECT COUNT(*) FROM certificados").fetchone()[0]
+        if cantidad == 0:
+            return sembrar_demo(almacen)
+        return {"creados": 0, "ya_existian": cantidad, "verificaciones_creadas": 0}
+    finally:
+        if directorio_datos is not None:
+            database.DATABASE_PATH = ruta_bd_original
 
 
-@app.exception_handler(RequestValidationError)
 async def error_de_validacion(_: Request, __: RequestValidationError) -> JSONResponse:
     """Devuelve un mensaje de validación consistente en español."""
     return JSONResponse(
@@ -111,7 +125,6 @@ async def error_de_validacion(_: Request, __: RequestValidationError) -> JSONRes
     )
 
 
-@app.exception_handler(StarletteHTTPException)
 async def error_http(request: Request, error: StarletteHTTPException) -> Response:
     """Devuelve errores JSON en API y páginas amigables en la web."""
     if request.url.path.startswith("/api/"):
@@ -128,7 +141,6 @@ async def error_http(request: Request, error: StarletteHTTPException) -> Respons
     )
 
 
-@app.exception_handler(Exception)
 async def error_interno(request: Request, _: Exception) -> Response:
     """Evita mostrar detalles internos y usa la plantilla de error propia."""
     if request.url.path.startswith("/api/"):
@@ -148,7 +160,40 @@ async def error_interno(request: Request, _: Exception) -> Response:
     )
 
 
-@app.get("/salud")
-def obtener_salud() -> dict[str, str]:
-    """Indica que la aplicación está disponible."""
-    return {"estado": "ok"}
+def crear_app() -> FastAPI:
+    """Construye la app con configuración validada y cookies según el entorno."""
+    config.validar_configuracion()
+    aplicacion = FastAPI(
+        title="DigiBlock",
+        description="Prototipo académico de certificados verificables",
+        lifespan=ciclo_vida,
+    )
+    aplicacion.add_middleware(
+        SessionMiddleware,
+        secret_key=config.SECRET_KEY,
+        session_cookie="digiblock_sesion",
+        max_age=3600,
+        same_site="lax",
+        https_only=config.APP_ENV == "produccion",
+    )
+    aplicacion.add_middleware(LimiteCuerpoApi)
+    aplicacion.mount(
+        "/static",
+        StaticFiles(directory=str(config.BASE_DIR / "app" / "static")),
+        name="static",
+    )
+    aplicacion.include_router(api_router)
+    aplicacion.include_router(web_router)
+    aplicacion.add_exception_handler(RequestValidationError, error_de_validacion)
+    aplicacion.add_exception_handler(StarletteHTTPException, error_http)
+    aplicacion.add_exception_handler(Exception, error_interno)
+
+    @aplicacion.get("/salud")
+    def obtener_salud() -> dict[str, str]:
+        """Indica que la aplicación está disponible."""
+        return {"estado": "ok"}
+
+    return aplicacion
+
+
+app = crear_app()
